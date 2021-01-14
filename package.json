@@ -1,0 +1,23 @@
+{
+  "name": "Attacking-Java-Rookie",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "build": "gitbook build ./content ./docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FHfirehuo/Attacking-Java-Rookie.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/FHfirehuo/Attacking-Java-Rookie/issues"
+  },
+  "homepage": "https://github.com/FHfirehuo/Attacking-Java-Rookie#readme"
+}

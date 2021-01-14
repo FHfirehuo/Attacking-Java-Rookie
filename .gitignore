@@ -1,0 +1,29 @@
+HELP.md
+
+./_book
+./content
+
+./_book/*
+./content/*
+./node_modules/*
+
+_book/
+content/
+node_modules/
+
+### STS ###
+
+.classpath
+.project
+.settings
+
+package-lock.json
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### VS Code ###
+.vscode/

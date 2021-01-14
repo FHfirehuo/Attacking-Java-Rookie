@@ -1,0 +1,32 @@
+{
+    "title": "进击的java菜鸟",
+    "author": "firehuo",
+    "description": "这是一本java程序员写的日常知识积累",
+    "language": "zh-hans",
+    "gitbook": "3.2.3",
+    "plugins": [
+        "-search",
+        "-sharing",
+        "back-to-top-button",
+        "code",
+        "insert-logo",
+        "favicon-absolute",
+        "expandable-chapters"
+    ],
+    "pluginsConfig": {
+        "insert-logo": {
+            "url": "/Attacking-Java-Rookie/image/log.jpg",
+            "style": "background: none; max-height: 30px; min-height: 30px"
+        },
+        "favicon-absolute":{
+            "favicon": "/Attacking-Java-Rookie/image/favicon.ico",
+            "appleTouchIconPrecomposed152": "/apple-touch-icon-precomposed-152.png"
+        },
+        "fontsettings": {
+            "theme": "white",
+            "family": "sans",
+            "size": 3
+        }
+
+    }
+}
