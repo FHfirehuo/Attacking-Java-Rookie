@@ -206,7 +206,7 @@
     * [Redis持久化](Chapter08/RedisPersistence.md)
     * [redis主从架构重新选举master带来的问题](Chapter08/redisMaster.md)
     * [Redis String底层实现](Chapter08/RedisString.md)
-        
+    
 * [Part IX 数据库篇](Chapter09/db.md)
     * [mysql时区](Chapter09/MysqlServerTimezone.md)
     * [innodb线程](Chapter09/innodbThread.md)

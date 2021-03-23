@@ -135,9 +135,9 @@ public class Test {
 }
 ```
 
-​ 上段代码中，如果把变量a和b前面的任一个final去掉，这段代码都编译不过。
+ 上段代码中，如果把变量a和b前面的任一个final去掉，这段代码都编译不过。
 
-​ 这段代码会被编译成两个class文件：Test.class和Test1.class。默认情况下，编译器会为匿名内部类和局部内部类起名为Outter1.class。
+ 这段代码会被编译成两个class文件：Test.class和Test1.class。默认情况下，编译器会为匿名内部类和局部内部类起名为Outter1.class。
 
 原因是为什么呢？这是因为test()方法里面的参数a和b，在运行时，main线程快要结束，但是thread还没有开始。因此需要有一种机制，在使得运行thread线程时候能够调用a和b的值，怎办呢？java采用了一种复制的机制，
 
@@ -150,4 +150,99 @@ final关键字主要用在三个地方：变量、方法、类。
 1. 对于一个final变量，如果是基本数据类型的变量，则其数值一旦在初始化之后便不能更改；如果是引用类型的变量，则在对其初始化之后便不能再让其指向另一个对象。
 1. 当用final修饰一个类时，表明这个类不能被继承。final类中的所有成员方法都会被隐式地指定为final方法。
 1. 使用final方法的原因有两个。第一个原因是把方法锁定，以防任何继承类修改它的含义；第二个原因是效率。在早期的Java实现版本中，会将final方法转为内嵌调用。但是如果方法过于庞大，可能看不到内嵌调用带来的任何性能提升（现在的Java版本已经不需要使用final方法进行这些优化了）。类中所有的private方法都隐式地指定为final。
+
+
+
+
+
+
+
+# 细节七、写 final 域的重排序规则，你知道吗？
+
+这个规则是指禁止对 final 域的写重排序到构造函数之外，这个规则的实现主要包含了两个方面：
+
+1. JMM 禁止编译器把 final 域的写重排序 到 构造函数 之外
+2. 编译器会在 final 域写之后，构造函数 return 之前，插入一个 StoreStore 屏障。这个屏障可以禁止处理器把 final 域的写重排序到构造函数之外
+
+给举个例子，要不太抽象了，先看一段代码
+
+```
+public class FinalTest{
+
+    private int a;  //普通域
+    private final int b; //final域
+    private static FinalTest finalTest;
+
+    public FinalTest() {
+        a = 1; // 1. 写普通域
+        b = 2; // 2. 写final域
+    }
+
+    public static void writer() {
+        finalTest = new FinalTest();
+    }
+
+    public static void reader() {
+        FinalTest demo = finalTest; // 3.读对象引用
+        int a = demo.a;    //4.读普通域
+        int b = demo.b;    //5.读final域
+    }
+}
+```
+
+假设线程 A 在执行 writer()方法，线程 B 执行 reader()方法。
+
+由于变量 a 和变量 b 之间没有依赖性，所以就有可能会出现下图所示的重排序
+
+![final关键字的这8个小细节，你get到几个？](https://p6-tt.byteimg.com/origin/pgc-image/f1d28a566eca4622aec231152fae7533?from=pc)
+
+
+
+由于普通变量 a 可能会被重排序到构造函数之外，所以线程 B 就有可能读到的是普通变量 a 初始化之前的值（零值），这样就可能出现错误。
+
+而 final 域变量 b，根据重排序规则，会禁止 final 修饰的变量 b 重排序到构造函数之外，从而 b 能够正确赋值，线程 B 就能够读到 final 域变量 b初始化后的值。
+
+**结论**：写 final 域的重排序规则可以确保在对象引用为任意线程可见之前，对象的 final 域已经被正确初始化过了，而普通域就不具有这个保障。
+
+# 细节八：读 final 域的重排序规则，你知道吗？
+
+这个规则是指在一个线程中，初次读对象引用和初次读该对象包含的 final 域，JMM 会禁止这两个操作的重排序。
+
+还是上面那段代码
+
+```
+public class FinalTest{
+
+    private int a;  //普通域
+    private final int b; //final域
+    private static FinalTest finalTest;
+
+    public FinalTest() {
+        a = 1; // 1. 写普通域
+        b = 2; // 2. 写final域
+    }
+
+    public static void writer() {
+        finalTest = new FinalTest();
+    }
+
+    public static void reader() {
+        FinalTest demo = finalTest; // 3.读对象引用
+        int a = demo.a;    //4.读普通域
+        int b = demo.b;    //5.读final域
+    }
+}
+```
+
+假设线程 A 在执行 writer()方法，线程 B 执行 reader()方法。
+
+线程 B 可能就会出现下图所示的重排序
+
+![final关键字的这8个小细节，你get到几个？](https://p1-tt.byteimg.com/origin/pgc-image/81016de6ea904d92aa1ee03bf8add379?from=pc)
+
+
+
+可以看到，由于读对象的普通域被重排序到了读对象引用的前面，就会出现线程 B 还未读到对象引用就在读取该对象的普通域变量，这显然是错误的操作。而 final 域的读操作就“限定”了在读 final 域变量前已经读到了该对象的引用，从而就可以避免这种情况。
+
+**结论**：读 final 域的重排序规则可以确保在读一个对象的 final 域之前，一定会先读包含这个 final 域的对象的引用。
 
