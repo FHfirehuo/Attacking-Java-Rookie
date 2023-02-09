@@ -185,6 +185,94 @@ public void lock() {
 
 从上面代码我们可能觉着读写控制分开了，提高了读的共享控制是不是读写锁的性能要比独占锁要高呢？
 
+
+
+**写锁的获取与释放**
+
+```
+protected final boolean tryAcquire(int acquires) {
+            /*
+             * Walkthrough:
+             * 1. If read count nonzero or write count nonzero
+             *    and owner is a different thread, fail.
+             * 2. If count would saturate, fail. (This can only
+             *    happen if count is already nonzero.)
+             * 3. Otherwise, this thread is eligible for lock if
+             *    it is either a reentrant acquire or
+             *    queue policy allows it. If so, update state
+             *    and set owner.
+             */
+            Thread current = Thread.currentThread();
+            int c = getState();
+            //获取独占锁(写锁)的被获取的数量
+            int w = exclusiveCount(c);
+            if (c != 0) {
+                // (Note: if c != 0 and w == 0 then shared count != 0)
+                //1.如果同步状态不为0，且写状态为0,则表示当前同步状态被读锁获取
+                //2.或者当前拥有写锁的线程不是当前线程
+                if (w == 0 || current != getExclusiveOwnerThread())
+                    return false;
+                if (w + exclusiveCount(acquires) > MAX_COUNT)
+                    throw new Error("Maximum lock count exceeded");
+                // Reentrant acquire
+                setState(c + acquires);
+                return true;
+            }
+            if (writerShouldBlock() ||
+                !compareAndSetState(c, c + acquires))
+                return false;
+            setExclusiveOwnerThread(current);
+            return true;
+        }
+```
+
+1)c是获取当前锁状态,w是获取写锁的状态。
+
+2)如果锁状态不为零，而写锁的状态为0，则表示读锁状态不为0，所以当前线程不能获取写锁。或者锁状态不为零，而写锁的状态也不为0，但是获取写锁的线程不是当前线程，则当前线程不能获取写锁。
+
+3)写锁是一个可重入的排它锁，在获取同步状态时，增加了一个读锁是否存在的判断。
+
+写锁的释放与ReentrantLock的释放过程类似，每次释放将写状态减1，直到写状态为0时，才表示该写锁被释放了。
+
+**3.读锁的获取与释放**
+
+```
+protected final int tryAcquireShared(int unused) {
+    for(;;) {
+        int c = getState();
+        int nextc = c + (1<<16);
+        if(nextc < c) {
+           throw new Error("Maxumum lock count exceeded");
+        }
+        if(exclusiveCount(c)!=0 && owner != Thread.currentThread())
+           return -1;
+        if(compareAndSetState(c,nextc))
+           return 1;
+    }}
+```
+
+1)读锁是一个支持重进入的共享锁，可以被多个线程同时获取。
+
+2)在没有写状态为0时，读锁总会被成功获取，而所做的也只是增加读状态（线程安全）
+
+3)读状态是所有线程获取读锁次数的总和，而每个线程各自获取读锁的次数只能选择保存在ThreadLocal中，由线程自身维护。
+
+读锁的每次释放均减小状态（线程安全的，可能有多个读线程同时释放锁），减小的值是1<<16。
+
+
+
+**4.锁降级**
+
+降级是指当前把持住写锁，再获取到读锁，随后释放(先前拥有的)写锁的过程。
+
+锁降级过程中的读锁的获取是否有必要，答案是必要的。主要是为了保证数据的可见性，如果当前线程不获取读锁而直接释放写锁，假设此刻另一个线程T获取的写锁，并修改了数据，那么当前线程就无法感知到线程T的数据更新，如果当前线程遵循锁降级的步骤，那么线程T将会被阻塞，直到当前线程使数据并释放读锁之后，线程T才能获取写锁进行数据更新。
+
+
+
+**5.读锁与写锁的整体流程**
+
+![img](https://p3-sign.toutiaoimg.com/tos-cn-i-qvj2lq49k0/fd605758e4c24226b23df6cadaa0d3aa~noop.image?_iz=58558&from=article.pc_detail&x-expires=1669353814&x-signature=AC6Vv6292dx%2F7OAYffBvq51BEPI%3D)
+
 但是从一些性能测试上来说，读写锁的性能并不好，而且使用不当还会引起饥饿写的问题。
 
 饥饿写即在使用读写锁的时候，读线程的数量要远远大于写线程的数量，导致锁长期被读线程持有，写线程无法获取写操作权限而进入饥饿状态。

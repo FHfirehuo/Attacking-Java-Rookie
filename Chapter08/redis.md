@@ -1,4 +1,17 @@
-# Redis删除过期key的策略
+# Redis
+
+```shell
+docker run --name redis -m 200m -p 6379:6379 \
+-e TZ=Asiz/Shanghai \
+--requirepass 123455
+--privileged=true -d redis
+```
+
+
+
+
+
+## Redis删除过期key的策略
 
 ## 在Redis中，假如我们设置了100w个key，这些key设置了只能存活2个小时，那么在2个小时后，redis是如何来删除这些key的？
 

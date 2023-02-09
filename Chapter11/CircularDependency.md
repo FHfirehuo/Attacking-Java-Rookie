@@ -1,6 +1,4 @@
-# spring 循环依赖
-
-## 
+# spring 循环依赖 
 
 在Spring中，对象的实例化是通过反射实现的，而对象的属性则是在对象实例化之后通过一定的方式设置的。
 
@@ -15,7 +13,7 @@
 ## 如何检测是否有循环依赖
 
  可以 Bean在创建的时候给其打个标记，如果递归调用回来发现正在创建中的话--->即可说明循环依赖。
- 
+
 ## 怎么解决的
 
 Spring的循环依赖的理论依据其实是基于Java的引用传递，当我们获取到对象的引用时，对象的field或zh属性是可以延后设置的(但是构造器必须是在获取引用之前)。
@@ -347,7 +345,7 @@ AbstractAutowireCapableBeanFactory#doCreateBean
 ![](../image/c11/cd-3.png)
 
 #### 左边文字：
-     
+
 这个ObjectFactory就是上文说的labmda表达式，中间有getEarlyBeanReference方法，注意存入singletonFactories时并不会执行lambda表达式，也就是不会执行getEarlyBeanReference方法
      
 

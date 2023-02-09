@@ -107,8 +107,7 @@ public void refreshRoute() {
 ```
 
 
-我们知道spring-cloud-zuul是依赖springMVC来注册路由的，而springMVC又是在建立在servlet之上的（这里微服务专家杨波老师写过一篇文章讲述其网络模型，可以参考看看），在servlet3.0之前使用的是thread per connection方式处理请求，就是每一个请求需要servlet容器为其分配一个线程来处理，直到响应完用户请求，才被释放回容器线程池，如果后端业务处理比较耗时，那么这个线程将会被一直阻塞，不能干其他事情，如果耗时请求比较多时，servlet容器线程将被耗尽，也就无法处理新的请求了，所以Netflix还专门开发了一个熔断的组件Hystrix 来保护这样的服务，防止其因后端的一些慢服务耗尽资源，造成服务不可用。
+我们知道spring-cloud-zuul是依赖springMVC来注册路由的，而springMVC又是在建立在servlet之上的），在servlet3.0之前使用的是thread per connection方式处理请求，就是每一个请求需要servlet容器为其分配一个线程来处理，直到响应完用户请求，才被释放回容器线程池，如果后端业务处理比较耗时，那么这个线程将会被一直阻塞，不能干其他事情，如果耗时请求比较多时，servlet容器线程将被耗尽，也就无法处理新的请求了，所以Netflix还专门开发了一个熔断的组件Hystrix 来保护这样的服务，防止其因后端的一些慢服务耗尽资源，造成服务不可用。
 不过在servlet3.0出来之后支持异步servlet了，可以把业务操作放到独立的线程池里面去，
 这样可以尽快释放servlet线程，springMVC本身也支持异步servlet了
-
 

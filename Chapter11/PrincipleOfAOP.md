@@ -470,7 +470,7 @@ retVal = invocation.proceed();
 
 在上面的DefaultAdvisorChainFactory.getInterceptorsAndDynamicInterceptionAdvice()方法中：
 
- 
+
 ```java
 @Override
 public List<Object> getInterceptorsAndDynamicInterceptionAdvice(
@@ -795,10 +795,5 @@ public class ProxyFactory extends ProxyCreatorSupport {
 
 ProxyFactory没有使用FactoryBean的IOC封装，而是直接集成了ProxyCreatorSupport的功能来完成AOP的属性
 
-```java
 
-```
 
-```java
-
-```

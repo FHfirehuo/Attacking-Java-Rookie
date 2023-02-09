@@ -9,5 +9,7 @@
 7.  [术语](term.md)
 8.  [优化方案](optimization.md)
 9.  [Mybatis鸡肋的缓存体系](Mybatis.md)
-10. [内存结构](memory.md)
-11. [MySQL一次insert刷几次盘](fsync.md)
+10.  [内存结构](memory.md)
+11.  [MySQL一次insert刷几次盘](fsync.md)
+12.  [主从架构问题](masterSalve.md)
+13.  

@@ -73,8 +73,8 @@ Spring中的DI其实是IOC具体实现方式，及通过依赖注入完成了控
 当然如果你不满意水源的名字你个给这个生产线起个别名; 比如 “泉水”改为“冰泉”是不是就高大上了。
 
     这里说一个小技巧：如果方法名是以do开头的，都是真正干活的关键方法。一定要看。比如 “doLoadBeanDefinitions”，“doRegisterBeanDefinitions”，“doGetBean”
-    
-####### BeanDefinition 都有什么信息
+
+###### BeanDefinition 都有什么信息
 
 写几个主要信息
 
@@ -137,11 +137,11 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
    // 常用于作为 父bean 用于继承，其实也很少用......
    boolean isAbstract();
 ```
- 
+
 ####  调试工程 prepareBeanFactory
 
-准别工厂的基础环境可以理解为通电、通气、通交通（水工厂就不写通水了） 
- 
+准备工厂的基础环境可以理解为通电、通气、通交通（水工厂就不写通水了） 
+
 ####  提出修改意见 postProcessBeanFactory
 
 这个是个扩展方法，因为spring是面向扩展的。所以这个可以留给子类实现。
@@ -221,15 +221,15 @@ BeanDefinitionRegistryPostProcessor继承自 BeanFactoryPostProcessor，比BeanF
     注：这边的 “常规 BeanFactoryPostProcessor” 主要用来跟BeanDefinitionRegistryPostProcessor区分。
 
 #### 执行修改意见 invokeBeanFactoryPostProcessors
- 
+
 有一个疑问 上面都已经注册了问什么不直接执行要单独拿出来执行呢？
- 
+
 其实你想一下，现实中有很多专家，每个专家提的意见可能都不一样。 甚至可以不着专家评审提意见。这是不是就是上面说的面向扩展。
 
 看看invokeBeanFactoryPostProcessors的注释和postProcessBeanFactory的注释
 * postProcessBeanFactory： 标准初始化后，修改应用程序上下文的内部bean工厂。所有bean定义都将被加载，但是尚未实例化任何bean。这允许在某些ApplicationContext实现中注册特殊的BeanPostProcessor等。
 * invokeBeanFactoryPostProcessors： 实例化并调用所有注册BeanFactoryPostProcessor的Bean，并遵循显式顺序（如果给定的话）。必须在单例实例化之前调用
- 
+
 我们在obtainFreshBeanFactory介绍中看到的的词是 **“加载”**、**“装载”**、**“beanFactory”**。这里出现了新词 **“ApplicationContext”** 和 **“注册”** 以及 **“实例化”**。
 
 先说说beanFactory和ApplicationContext的区别吧

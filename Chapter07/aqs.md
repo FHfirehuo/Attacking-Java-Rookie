@@ -43,11 +43,11 @@ AQS定义两种资源共享方式：Exclusive（独占，只有一个线程能�
 ## 源码实现
 
 接下来我们开始开始讲解AQS的源码实现。依照acquire-release、acquireShared-releaseShared的次序来。
-   
+
 #### 1. acquire(int)
 
 acquire是一种以独占方式获取资源，如果获取到资源，线程直接返回，否则进入等待队列，直到获取到资源为止，且整个过程忽略中断的影响。该方法是独占模式下线程获取共享资源的顶层入口。获取到资源后，线程就可以去执行其临界区代码了。下面是acquire()的源码：
-   
+
 ```
 /**
      * Acquires in exclusive mode, ignoring interrupts.  Implemented
@@ -817,3 +817,57 @@ final boolean acquireQueued(final Node node, int arg) {
 ## 通过AQS是如何设置链表尾巴的来理解AQS为什么效率这么高
 
 我们的思路是什么呢？假如你要往一个链表上添加尾巴，尤其是好多线程都要往链表上添加尾巴，我们仔细想想看用普通的方法怎么做？第一点要加锁这一点是肯定的，因为多线程，你要保证线程安全，一般的情况下，我们会锁定整个链表(Sync)，我们的新线程来了以后，要加到尾巴上，这样很正常，但是我们锁定整个链表的话，锁的太多太大了，现在呢它用的并不是锁定整个链表的方法，而是只观测tail这一个节点就可以了，怎么做到的呢？compareAndAetTail(oldTail,node)，中oldTail是它的预期值，假如说我们想把当前线程设置为整个链表尾巴的过程中，另外一个线程来了，它插入了一个节点，那么仔细想一下Node oldTail = tail;的整个oldTail还等于整个新的Tail吗？不等于了吧，那么既然不等于了，说明中间有线程被其它线程打断了，那如果说却是还是等于原来的oldTail，这个时候就说明没有线程被打断，那我们就接着设置尾巴，只要设置成功了OK，compareAndAetTail(oldTail,node)方法中的参数node就做为新的Tail了，所以用了CAS操作就不需要把原来的整个链表上锁，这也是AQS在效率上比较高的核心。
+
+
+
+
+
+# AQS为什么要用双向链表
+
+# 1、原因分析
+
+首先，双向链表有两个指针，一个指针指向前置节点，一个指针指向后继节点。所以，双向链表可以支持常量 O(1) 时间复杂度的情况下找到前驱节点。因此，双向链表在插入和删除操作的时候，要比单向链表简单、高效。
+
+从双向链表的特性来看，我认为 AQS 使用双向链表有三个方面的原因：
+
+![img](https://p3-sign.toutiaoimg.com/tos-cn-i-qvj2lq49k0/83374e34f061493e8147adb41de7846e~noop.image?_iz=58558&from=article.pc_detail&x-expires=1661704870&x-signature=xm8k9o1GzewJ82ihRw5GNTh28gk%3D)
+
+
+
+第1个原因，没有竞争到锁的线程加入到阻塞队列，并且阻塞等待的前提是，当前线程所在节点的前置节点是正常状态，这样设计是为了避免链表中存在异常线程导致无法唤醒后续线程的问题。
+
+![img](https://p3-sign.toutiaoimg.com/tos-cn-i-qvj2lq49k0/d0848fe58ff24d25b10a743c0a69e4c8~noop.image?_iz=58558&from=article.pc_detail&x-expires=1661704870&x-signature=LjxrF2jcwqKhi0c3%2FK7DNWCaCAI%3D)
+
+
+
+所以，线程阻塞之前需要判断前置节点的状态，如果没有指针指向前置节点，就需要从 Head 节点开始遍历，性能非常低。
+
+![img](https://p3-sign.toutiaoimg.com/tos-cn-i-qvj2lq49k0/c0d8eccc235547d39ca76d4ed9e4aa88~noop.image?_iz=58558&from=article.pc_detail&x-expires=1661704870&x-signature=ne8BoRJ1BnPXNVltcipxm5zTGQ4%3D)
+
+
+
+第2个原因，在 Lock 接口里面有一个，lockInterruptibly()方法，这个方法表示处于锁阻塞的线程允许被中断。
+
+![img](https://p3-sign.toutiaoimg.com/tos-cn-i-qvj2lq49k0/0404dc801c0741c697b9535462336c08~noop.image?_iz=58558&from=article.pc_detail&x-expires=1661704870&x-signature=XyVlDLYLC7wEY2w83xL992lbooE%3D)
+
+
+
+也就是说，没有竞争到锁的线程加入到同步队列等待以后，是允许外部线程通过interrupt()方法触发唤醒并中断的。这个时候，被中断的线程的状态会修改成 CANCELLED。而被标记为 CANCELLED 状态的线程，是不需要去竞争锁的，但是它仍然存在于双向链表里面。
+
+这就意味着在后续的锁竞争中，需要把这个节点从链表里面移除，否则会导致锁阻塞的线程无法被正常唤醒。在这种情况下，如果是单向链表，就需要从 Head 节点开始往下逐个遍历，找到并移除异常状态的节点。同样效率也比较低，还会导致锁唤醒的操作和遍历操作之间的竞争。
+
+![img](https://p3-sign.toutiaoimg.com/tos-cn-i-qvj2lq49k0/6990f600d8b043dc834a3bd29a67f475~noop.image?_iz=58558&from=article.pc_detail&x-expires=1661704870&x-signature=e4aF8BGPusqtekwtcuWPiL27D80%3D)
+
+
+
+第3个原因，是为了避免线程阻塞和唤醒的开销，所以刚加入到链表的线程，首先会通过自旋的方式尝试去竞争锁。
+
+![img](https://p3-sign.toutiaoimg.com/tos-cn-i-qvj2lq49k0/46f9ab2f2ee54b4aa26a1ec531509c43~noop.image?_iz=58558&from=article.pc_detail&x-expires=1661704870&x-signature=GI%2BbJXRD9O%2FMeDoB591voySbptk%3D)
+
+
+
+但是实际上按照公平锁的设计，只有头节点的下一个节点才有必要去竞争锁，后
+
+续的节点竞争锁的意义不大。否则，就会造成羊群效应，也就是大量的线程在阻塞之前尝试去竞争锁带来比较大的性能开销。
+
+所以，为了避免这个问题，加入到链表中的节点在尝试竞争锁之前，需要判断前置节点是不是头节点，如果不是头节点，就没必要再去触发锁竞争的动作。所以这里会涉及到前置节点的查找，如果是单向链表，那么这个功能的实现会非常复杂。

@@ -1,4 +1,4 @@
-# SpringMVC源码分析
+SpringMVC源码分析
 
 ## DispatcherServlet
 
@@ -38,17 +38,3 @@ springboot web类型加载的是**AnnotationConfigServletWebServerApplicationCon
 3. Cntroller处理request，并返回ModelAndView对象，Controller是SpringMVC中负责处理request的组件(类似于struts2中的Action)，ModelAndView是封装结果视图的组件。
 
 ④ ⑤ ⑥：视图解析器解析ModelAndView对象并返回对应的视图给客户端。
-
-```
-
-```
-
-
-```
-
-```
-
-
-```
-
-```

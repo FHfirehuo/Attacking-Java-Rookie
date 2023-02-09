@@ -1,6 +1,11 @@
 # Spring事务传播
 
+ Spring 的事务管理的传播机制，就是使用 ThreadLocal 实现的。因为 ThreadLocal 是线程私有的，所以 Spring 的事务传播机制是不能够跨线程的。**在问到 Spring 事务管理是否包含子线程时，要能够想到面试官的真实意图。**
+
+
+
 ## Spring中七种Propagation类的事务属性详解
+
 | 值 | 说明 |
 | :---: | :---:|
 | NOT_SUPPORTED | 以非事务方式执行操作，如果当前存在事务，就把当前事务挂起。 |
@@ -33,24 +38,6 @@
 而事务切面的Interceptor就是TransactionInterceptor，所以本篇直接从该类开始。
 
 TransactionInterceptor#invoke
-
-```java
-	@Override
-	@Nullable
-	public Object invoke(MethodInvocation invocation) throws Throwable {
-		// Work out the target class: may be {@code null}.
-		// The TransactionAttributeSource should be passed the target class
-		// as well as the method, which may be from an interface.
-		Class<?> targetClass = (invocation.getThis() != null ? AopUtils.getTargetClass(invocation.getThis()) : null);
-
-		// Adapt to TransactionAspectSupport's invokeWithinTransaction...
-		return invokeWithinTransaction(invocation.getMethod(), targetClass, invocation::proceed);
-	}
-
-
-```
-
-
 
 ```java
 	@Override
@@ -216,43 +203,8 @@ TransactionInterceptor#invoke
 
 
 ## Spring 事务扩展 – @TransactionalEventListener
-```java
 
-```
-
-```java
-
-```
-
-```java
-
-```
-
-```java
-
-```
-
-```java
-
-```
-
-```java
-
-```
-
-```java
-
-```
-
-```java
-
-```
-
-```java
-
-```
 
 ## 总结
-本篇详细分析了事务的传播原理，另外还有隔离级别，这在Spring中没有体现，需要我们自己结合数据库的知识进行分析设置。最后我们还需要考虑声明式事务和编程式事务的优缺点，声明式事务虽然简单，但不适合用在长事务中，
-会占用大量连接资源，这时就需要考虑利用编程式事务的灵活性了。总而言之，事务的使用并不是一律默认就好，接口的一致性和吞吐量与事务有着直接关系，严重情况下可能会导致系统崩溃。
+本篇详细分析了事务的传播原理，另外还有隔离级别，这在Spring中没有体现，需要我们自己结合数据库的知识进行分析设置。最后我们还需要考虑声明式事务和编程式事务的优缺点，声明式事务虽然简单，但不适合用在长事务中，会占用大量连接资源，这时就需要考虑利用编程式事务的灵活性了。总而言之，事务的使用并不是一律默认就好，接口的一致性和吞吐量与事务有着直接关系，严重情况下可能会导致系统崩溃。
 

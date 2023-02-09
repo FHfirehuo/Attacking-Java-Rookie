@@ -464,3 +464,299 @@ public interface BeanDelegate {
 ## 注意
 
 由于CGLIB的大部分类是直接对Java字节码进行操作，这样生成的类会在Java的永久堆中。如果动态代理操作过多，容易造成永久堆满，触发OutOfMemory异常。
+
+
+
+#  CGLIB 动态代理介绍
+## 什么是 CGLIB？
+
+CGLIB是一个功能强大，高性能的代码生成包。它为没有实现接口的类提供代理，为JDK的动态代理提供了很好的补充。
+
+通常可以使用Java的动态代理创建代理，但当要代理的类没有实现接口或者为了更好的性能，CGLIB 是一个好的选择。
+
+## CGLIB 的原理
+
+CGLIB 原理：动态生成一个要代理类的子类，子类重写要代理的类的所有不是 final 的方法。在子类中采用方法拦截的技术拦截所有父类方法的调用，顺势织入横切逻辑。
+
+CGLIB 底层：采用ASM字节码生成框架，使用字节码技术生成代理类，比使用 Java 反射效率要高。
+
+# CGLIB 动态代理使用
+CGLIB 动态代理步骤：
+
+引入 CGLIB 依赖
+定义一个被代理类
+定义一个拦截器并实现接口 MethodInterceptor
+代理工厂类
+通过代理对象调用方法
+引入依赖：cglib-nodep-2.2.jar
+
+### Student：被代理类
+
+```java
+public class Student {
+  public void handOut() {
+    System.out.println("学生交作业。");
+	}
+} 
+```
+
+### CglibProxy：拦截器
+
+```java
+public class CglibProxy implements MethodInterceptor {
+  /**
+ 	* @param o: 代理对象
+ 	* @param method: 被代理方法
+ 	* @param params: 方法入参
+ 	* @param methodProxy: CGLIB方法
+ 	**/
+	@Override
+	public Object intercept(Object o, Method method, Object[] params, MethodProxy methodProxy) throws Throwable {
+    System.out.println("【增强方法】代理对象正在执行的方法：" + method.getName());
+    Object result = methodProxy.invokeSuper(o, params);
+    return result;
+	}
+}
+```
+
+CglibProxyFactory：代理工厂类
+
+```java
+public class CglibProxyFactory {
+	public static Object creatCglibProxyObj(Class<?> clazz) {
+    Enhancer enhancer = new Enhancer();
+    // 为加强器指定要代理的业务类（即为下面生成的代理类指定父类）
+    enhancer.setSuperclass(clazz);
+    // 设置回调：对于代理类上所有方法的调用，都会调用CallBack，而Callback则需要实现intercept()方法
+    enhancer.setCallback(new CglibProxy());
+    return enhancer.create();
+	}
+}
+```
+
+
+
+测试：
+
+```java
+public class Test {
+	public static void main(String[] args) {
+    Student studentProxy = (Student)CglibProxyFactory.creatCglibProxyObj(Student.class);
+    studentProxy.handOut();
+	}
+}
+```
+
+运行后，依旧可以增强原功能。
+
+3. CGLIB 动态代理原理
+上文中的是通过 enhancer.create 方法调用获取的代理对象，以此为入口深入探究一下 CGLIB 动态代理的实现原理。
+
+Enhancer#create()：
+
+```java
+public Object create() {
+    this.classOnly = false;
+    this.argumentTypes = null;
+    return this.createHelper();
+}
+```
+
+Enhancer#createHelper()：调用父类的 create() 方法
+
+```java
+private Object createHelper() {
+      //...
+  return super.create(KEY_FACTORY.newInstance(this.superclass != null ? this.superclass.getName() : null, 		  ReflectUtils.getNames(this.interfaces), 
+		this.filter, this.callbackTypes, this.useFactory, this.interceptDuringConstruction, this.serialVersionUID));
+}
+```
+
+AbstractClassGenerator#create()：
+
+```java
+protected Object create(Object key) {
+    try {
+        //...
+            if (gen == null) {
+            	// 1.生成代理类 
+                byte[] b = this.strategy.generate(this);
+                // 2.获取代理类名称
+                String className = ClassNameReader.getClassName(new ClassReader(b));
+                this.getClassNameCache(loader).add(className);
+                gen = ReflectUtils.defineClass(className, b, loader);
+            }
+              if (this.useCache) {
+            ((Map)cache2).put(key, new WeakReference(gen));
+        }
+
+        var24 = this.firstInstance(gen);
+    } finally {
+        CURRENT.set(save);
+    }
+
+    return var24;
+}
+//...
+}
+```
+
+
+
+DefaultGeneratorStrategy#generate()：生成代理类
+
+```java
+public byte[] generate(ClassGenerator cg) throws Exception {
+    ClassWriter cw = this.getClassWriter();
+    this.transform(cg).generateClass(cw);
+    return this.transform(cw.toByteArray());
+
+DebuggingClassWriter#toByteArray()：
+
+public byte[] toByteArray() {
+    return (byte[])((byte[])AccessController.doPrivileged(new PrivilegedAction() {
+        public Object run() {
+            byte[] b = DebuggingClassWriter.super.toByteArray();
+            if (DebuggingClassWriter.debugLocation != null) {
+                String dirs = DebuggingClassWriter.this.className.replace('.', File.separatorChar);
+                          try {
+            	// 如果 DebuggingClassWriter.DEBUG_LOCATION_PROPERTY 系统属性被设置，则输出代理类到指定目录
+                (new File(DebuggingClassWriter.debugLocation + File.separatorChar + dirs)).getParentFile().mkdirs();
+                File file = new File(new File(DebuggingClassWriter.debugLocation), dirs + ".class");
+                BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(file));
+
+                try {
+                    out.write(b);
+                } finally {
+                    out.close();
+                }
+
+                if (DebuggingClassWriter.traceEnabled) {
+                    file = new File(new File(DebuggingClassWriter.debugLocation), dirs + ".asm");
+                    out = new BufferedOutputStream(new FileOutputStream(file));
+
+                    try {
+                        ClassReader cr = new ClassReader(b);
+                        PrintWriter pw = new PrintWriter(new OutputStreamWriter(out));
+                        TraceClassVisitor tcv = new TraceClassVisitor((ClassVisitor)null, pw);
+                        cr.accept(tcv, 0);
+                        pw.flush();
+                    } finally {
+                        out.close();
+                    }
+                }
+            } catch (IOException var17) {
+                throw new CodeGenerationException(var17);
+            }
+        }
+
+        return b;
+    }
+		}));
+  }
+```
+
+生成 CGLIB 字节码文件
+
+由上文可知，把 DebuggingClassWriter.DEBUG_LOCATION_PROPERTY（也就是 cglib.debugLocation）系统属性设置为当前项目的根目录，即可保存 CGLIB 生成的代理类到当前项目根目录下。
+
+设置系统属性配置：
+
+```java
+public static void main(String[] args) {
+    System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY, System.getProperty("user.dir"));
+    Student studentProxy = (Student)CglibProxyFactory.creatCglibProxyObj(Student.class);
+    studentProxy.handOut();
+}
+```
+生成的动态代理类为：
+
+```java
+public class Student$$EnhancerByCGLIB$$723acbd8 extends Student implements Factory {
+private boolean CGLIB$BOUND;
+private static final ThreadLocal CGLIB$THREAD_CALLBACKS;
+private static final Callback[] CGLIB$STATIC_CALLBACKS;
+private MethodInterceptor CGLIB$CALLBACK_0;
+private static final Method CGLIB$handOut$0$Method;
+private static final MethodProxy CGLIB$handOut$0$Proxy;
+//...
+
+static void CGLIB$STATICHOOK1() {
+    CGLIB$THREAD_CALLBACKS = new ThreadLocal();
+    CGLIB$emptyArgs = new Object[0];
+    Class var0 = Class.forName("com.zzc.proxy.cglib.Student$$EnhancerByCGLIB$$723acbd8");
+    Class var1;
+    Method[] var10000 = ReflectUtils.findMethods(new String[]{"finalize", "()V", "equals", "(Ljava/lang/Object;)Z", "toString", "()Ljava/lang/String;", "hashCode", "()I", "clone", "()Ljava/lang/Object;"}, (var1 = Class.forName("java.lang.Object")).getDeclaredMethods());
+    CGLIB$handOut$0$Method = ReflectUtils.findMethods(new String[]{"handOut", "()V"}, (var1 = Class.forName("com.zzc.proxy.cglib.Student")).getDeclaredMethods())[0];
+    CGLIB$handOut$0$Proxy = MethodProxy.create(var1, var0, "()V", "handOut", "CGLIB$handOut$0");
+    //...
+}
+
+final void CGLIB$handOut$0() {
+    super.handOut();
+}
+
+public final void handOut() {
+    MethodInterceptor var10000 = this.CGLIB$CALLBACK_0;
+    if (var10000 == null) {
+        CGLIB$BIND_CALLBACKS(this);
+        var10000 = this.CGLIB$CALLBACK_0;
+    }
+
+    if (var10000 != null) {
+        var10000.intercept(this, CGLIB$handOut$0$Method, CGLIB$emptyArgs, CGLIB$handOut$0$Proxy);
+    } else {
+        super.handOut();
+    }
+}
+
+//...
+
+static {
+    CGLIB$STATICHOOK1();
+}
+
+```
+## 说明：
+
+1. 生成的动态代理类继承了父类 Student，并且实现了接口 Factory
+
+2. 动态代理类持有 MethodInterceptor
+
+3. 动态代理类会重写父类 Student 的非 final、private 方法；也会构建自己的方法（cglib 方法），构建方式：CGLIB”+“$父类方法
+
+4. cglib 方法的方法体：super.方法名，直接调用父类；重写方法：它会调用拦截器中的 intercept() 方法
+
+5. methodProxy.invokeSuper() 方法会调用动态代理类中的 cglib 方法；methodProxy.invoke() 方法会调用动态代理类中的重写方法
+
+   
+
+   ## CGLIB 动态代理原理：
+
+   外界调用了方法后（studentProxy.handOut();），由于父类 Student 被子类（动态代理类）给继承了（已经重写了 handOut()），所以，会调用动态代理类中的 handOut() 方法。而在这个重写的方法中，又会去调用 MethodInterceptor#intercept() 方法。在这个方法中，功能增强后，再去调用动态代理中的 cglib 方法，而此方法又会去调用父类中的方法。
+
+## JDK 动态代理和 CGLIB 动态代理比较
+###  区别
+总结一下两者的区别吧：
+
+JDK 动态代理基于接口，CGLIB 动态代理基于类。因为 JDK 动态代理生成的代理类需要继承 java.lang.reflect.Proxy，所以，只能基于接口；CGLIB 动态代理是根据类创建此类的子类，所以，此类不能被 final 修饰
+JDK 和 CGLIB 动态代理都是在运行期生成字节码。而 JDK 是直接写 Class 字节码；而 CGLIB 使用 ASM 框架写 Class 字节码（不鼓励直接使用ASM，因为它要求你必须对 JVM 内部结构包括 class 文件的格式和指令集都很熟悉）
+JDK 通过反射调用方法，CGLIB 通过 FastClass 机制（下一篇再将）直接调用方法。所以，CGLIB 执行的效率较高
+JDK 动态代理是利用反射机制生成一个实现代理接口的类（这个类看不见摸不着，在 jvm 内存中有这个类），在调用具体方法前调用 InvokeHandler来处理。核心是实现 InvocationHandler接口，使用 invoke()方法进行面向切面的处理，调用相应的通知；CGLIB 动态代理是利用 asm 开源包，对代理对象类的 class 文件加载进来，通过修改其字节码生成子类来处理。核心是实现 MethodInterceptor 接口，使用 intercept() 方法进行面向切面的处理，调用相应的通知。
+### 优缺点
+劣势：
+
+JDK：JDK的动态代理机制只能代理实现了接口的类，而不能实现接口的类就不能实现JDK的动态代理
+CGLIB：CGLIB 的原理是对指定的目标类生成一个子类，并覆盖其中方法实现增强，但因为采用的是继承，所以不能对 final 修饰的类进行代理
+优势：
+
+JDK：最小化依赖关系，减少依赖意味着简化开发和维护，JDK本身的支持，可能比 cglib 更加可靠
+JDK：平滑进行JDK版本升级，而字节码类库通常需要进行更新以保证在新版Java 上能够使用。代码实现简单
+CGLIB：从某种角度看，限定调用者实现接口是有些侵入性的实践，类似cglib动态代理就没有这种限制。只操作我们关心的类，而不必为其他相关类增加工作量。另外高性能。
+### 动态代理在 Spring 中的应用
+Spring 应用：
+
+如果目标对象实现了接口，默认情况下 Spring 会采用 JDK 的动态代理实现 AOP
+如果目标对象实现了接口，Spring 也可以强制使用 CGLIB 实现 AOP
+如果目标对象没有实现接口，必须采用 CGLIB 实现动态代理，当然 Spring 可以在 JDK 动态代理和 CGLIB 动态代理之间转换
+

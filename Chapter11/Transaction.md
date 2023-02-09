@@ -474,15 +474,3 @@ TransactionInterceptor实现了MethodInterceptor；代理的入口及invoke 方�
 这个方法逻辑很清晰，一目了然，if里面就是对声明式事务的处理，先调用createTransactionIfNecessary方法开启事务，然后通过invocation.proceedWithInvocation调用下一个切面，
 如果没有其它切面了，就是调用被代理类的方法，出现异常就回滚，否则提交事务，这就是Spring事务切面的执行过程。但是，我们主要要搞懂的就是在这些方法中是如何管理事务以及事务在多个方法之间是如何传播的。
 
-```java
-
-```
-
-
-
-```java
-
-```
-
-
-

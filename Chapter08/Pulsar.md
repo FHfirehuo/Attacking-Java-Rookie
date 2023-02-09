@@ -2,6 +2,16 @@
 
 
 
+```shell
+docker run -it --name pulsar -m 200m -p 6650:6650  -p 8080:8080 \
+--mount source=pulsardata,target=/pulsar/data \
+--mount source=pulsarconf,target=/pulsar/conf \
+-e TZ=Asiz/Shanghai \
+apachepulsar/pulsar:2.10.2 bin/pulsar standalone \
+--privileged=true -d pulsar
+
+```
+
 Apache Pulsar 和 Apache Kafka 到底有什么不同？今天，**万众期待的对比文终于来了！** 本文将详述 Pulsar 和 Kafka 消息模型之间的区别，以及 Pulsar 与 Kafka 在系统架构设计方面的差异。
 
 
@@ -320,3 +330,8 @@ Pulsar 是以 Segment 为中心的，因此在扩展容量时不需要数据重�
 
 总之，Apache Pulsar 这种独特的基于分布式日志存储的以 Segment 为中心的发布 / 订阅消息系统可以提供许多优势，例如可靠的流式系统，包括无限制的日志存储，无需分区重新平衡的即时扩展，快速复制修复以及通过最大化数据放置实现高写入和读取可用性选项。
 
+ ## Kafka 集群的过程中，遇到的痛点有：
+
+1. Kafka 运维较困难，突发热点事件时扩容节点无法自动均衡。在高流量峰值场景下，经常遇到了磁盘和 broker 达到瓶颈的情况。Kafka 可以轻松扩容 broker，然而集群扩容时新增 broker 无法自动承载流量，需要较为复杂的人工运维操作。
+2. 磁盘数据分布不均，topic 分区流量分布不均。随着业务波动，一些承载较大流量的 topic 下线后，其所在 broker 的流量和磁盘数据存储也会下降，类似情况多次发生后 topic 分区流量和磁盘数据分布就会失衡，需要人工干预来 rebalance 流量。
+3. 迁移分区带来数据移动，容易造成问题。流量 rebalance 需要迁移分区，相当于增加副本，在热点事件爆发、资源紧张时会造成更严重的后果。

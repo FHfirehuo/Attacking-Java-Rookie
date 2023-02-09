@@ -189,6 +189,34 @@ StampedLock内部定义了很多常量，定义这些常量的根本目的还是
 
 另外，StampedLock相比ReentrantReadWriteLock，对多核CPU进行了优化，可以看到，当CPU核数超过1时，会有一些自旋操作
 
+
+
+**WNode**
+队列中的节点对应的是WNode
+
+```java
+static final class WNode {
+    //前继节点
+    volatile WNode prev;
+    //后继节点
+    volatile WNode next;
+    //悲观读锁对应的栈
+    volatile WNode cowait;   
+    //对应的线程
+    volatile Thread thread;  
+    //节点的状态：取消CANCEL 1、等待WATING -1。
+    volatile int status;     
+    //节点类型：读锁、写锁
+    final int mode;   
+    WNode(int m, WNode p) { mode = m; prev = p; }
+}
+```
+
+具体的组织方式如下图所示，值得注意的是，**队列的第一个节点是哨兵节点，不代表具体的请求锁的节点。**
+![在这里插入图片描述](https://img-blog.csdnimg.cn/c8a9baa3d2014c7583fed69fa819ded7.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwMjc2NjI2,size_16,color_FFFFFF,t_70)
+
+
+
 #### 来看下writeLock方法
 
 ```
@@ -484,3 +512,15 @@ private long acquireRead(boolean interruptible, long deadline) {
 最终，等待队列的结构如下：
 
 ![](../image/c7/stamperdLock-5.png)
+
+
+
+## 总结
+
+StampedLock也是基于state和队列实现的，只不过不能重入。通过引入了乐观读并不加锁，在读多写少的场景中性能会比ReentrantReadWriteLock要好！
+
+StampedLock和ReentrantReadWriteLock的队列也有区别：
+1、StampedLock中的连续申请的读锁节点通过cowaiter新起了一个维度链表来存放。而ReentrantReadWriteLock的读锁节点是一个一个的排列在队列中的。
+![在这里插入图片描述](https://img-blog.csdnimg.cn/c8a9baa3d2014c7583fed69fa819ded7.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwMjc2NjI2,size_16,color_FFFFFF,t_70)
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/c257c494d85546f889d1623bc2d0d53f.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_Q1NETiBA5byg5a2f5rWpX2pheQ==,size_22,color_FFFFFF,t_70,g_se,x_16)

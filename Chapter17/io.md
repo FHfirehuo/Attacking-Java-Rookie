@@ -17,7 +17,7 @@ Java IO流是一个庞大的生态环境，其内部提供了很多不同的输�
 
 > 下图是一张图片，它由01串组成，我们可以通过程序把一张图片拷贝到一个文件夹中，
 > 把图片转化成二进制数据集，把数据一点一点地传递到文件夹中 , 类似于水的流动 , 这样整体的数据就是一个数据流
-  
+
 ![](../image/c17/io-7.png)
 
 #### IO 流读写数据的特点：
@@ -216,7 +216,7 @@ ByteArrayInputStream 内部包含一个 buf 字节数组缓冲区，该缓冲区
 将字符串中每个字符的低 8 位转换为字节读入到字节数组中，目前已过期
 
 ###### InputStream 总结：
-     
+
 * InputStream 是所有输入字节流的抽象基类
 * ByteArrayInputStream 和 FileInputStream 是两种基本的节点流，他们分别从字节数组 和 本地文件中读取数据
 * DataInputStream、BufferedInputStream 和 PushBackInputStream 都是处理流，对基本的节点流进行封装并增强
@@ -243,7 +243,4 @@ OutputStream 中大多数的类和 InputStream 是对应的，只不过数据的
 #### 字符流对象
 
 
-######
-
-######
 

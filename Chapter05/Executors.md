@@ -62,6 +62,7 @@ AbortPolicy：丢弃任务并抛出异常，这也是默认策略；
 CallerRunsPolicy：用调用者所在的线程来执行任务，所以开头的问题「线程把任务丢给线程池后肯定就马上返回了?」我们可以回答了，如果用的是 CallerRunsPolicy 策略，提交任务的线程（比如主线程）提交任务后并不能保证马上就返回，当触发了这个 reject 策略不得不亲自来处理这个任务。
 DiscardOldestPolicy：丢弃阻塞队列中靠最前的任务，并执行当前任务。
 DiscardPolicy：直接丢弃任务，不抛出任何异常，这种策略只适用于不重要的任务。
+
 5、keepAliveTime: 线程存活时间，如果在此时间内超出 corePoolSize 大小的线程处于 idle 状态，这些线程会被回收
 
 6、threadFactory：可以用此参数设置线程池的命名，指定 defaultUncaughtExceptionHandler（有啥用，后文阐述）,甚至可以设定线程为守护线程。

@@ -28,3 +28,13 @@ BGREWRITEAOF
 无论是 RDB 还是 AOF 都是先写入一个临时文件，然后通过 rename 完成文件的替换工作。
 
 ![](../image/c8/RedisPersistence-1.png)
+
+
+
+**混合持久化[#](https://link.zhihu.com/?target=https%3A//www.cnblogs.com/jojop/p/13941195.html%232784000098)**
+重启 Redis 时，如果使用 RDB 来恢复内存状态，会丢失大量数据。而如果只使用 AOF 日志重放，那么效率又太过于低下。Redis 4.0 提供了混合持久化方案，将 RDB 文件的内容和增量的 AOF 日志文件存在一起。这里的 AOF 日志不再是全量的日志，而是自 RDB 持久化开始到持久化结束这段时间发生的增量 AOF 日志，通常这部分日志很小。
+
+![img](https://pic3.zhimg.com/80/v2-05597549630c2e376c7cf3ae7831556e_1440w.webp)
+
+
+于是在 Redis 重启的时候，可以先加载 RDB 的内容，然后再重放增量 AOF 日志，就可以完全替代之前的 AOF 全量重放，重启效率因此得到大幅提升。
