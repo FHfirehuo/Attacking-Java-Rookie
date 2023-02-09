@@ -7,20 +7,17 @@
     "plugins": [
         "-search",
         "-sharing",
+        "back-to-top-button",
         "code",
+        "insert-logo",
         "favicon-absolute",
-        "mygitalk",
-        "search-pro",
-        "advanced-emoji",
-        "donate",
-        "pageview-count",
-        "popup",
-        "github",
-        "expandable-chapters",
-        "anchor-navigation-ex"
-
+        "expandable-chapters"
     ],
     "pluginsConfig": {
+        "insert-logo": {
+            "url": "/Attacking-Java-Rookie/image/log.jpg",
+            "style": "background: none; max-height: 30px; min-height: 30px"
+        },
         "favicon-absolute":{
             "favicon": "/Attacking-Java-Rookie/image/favicon.ico",
             "appleTouchIconPrecomposed152": "/apple-touch-icon-precomposed-152.png"
@@ -28,35 +25,7 @@
         "fontsettings": {
             "theme": "white",
             "family": "sans",
-            "size": 4
-        },
-        "mygitalk": {
-            "clientID": "552c61f2db64ee23fae3",
-            "clientSecret": "2774c5d2b8cc1697dc022c1842875cb2c455f899",
-            "repo": "Attacking-Java-Rookie",
-            "owner": "FHfirehuo",
-            "admin": ["FHfirehuo"],
-            "distractionFreeMode": false
-        },
-        "donate": {
-            "wechat": "https://fhfirehuo.github.io/Attacking-Java-Rookie/image/weixin.png",
-            "alipay": "https://fhfirehuo.github.io/Attacking-Java-Rookie/image/zhifubao.png",
-            "title": "",
-            "button": "赏",
-            "alipayText": "支付宝打赏",
-            "wechatText": "微信打赏"
-        },
-        "expandable-chapters":{},
-        "github": {
-            "url": "https://github.com/FHfirehuo/Attacking-Java-Rookie"
-        },
-        "code": {
-            "copyButtons": true
-        },
-        "anchor-navigation-ex": {
-            "showLevel": false,
-            "showGoTop": true,
-            "des": "包含 back-to-top-button功能"
+            "size": 3
         }
 
     }

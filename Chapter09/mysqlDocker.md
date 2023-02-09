@@ -14,9 +14,8 @@ sudo docker run --privileged=true -p 3307:3306 --name mysqldc  -v /Users/apple/D
 2022-12-28 15:59:23+00:00 [ERROR] [Entrypoint]: Database is uninitialized and password option is not specified
     You need to specify one of the following:
 
-    - MYSQL_ROOT_PASSWORD
-
-
+```mysql
+- MYSQL_ROOT_PASSWORD
 
 select host, user, authentication_string, plugin from user;
 
@@ -29,8 +28,6 @@ GRANT all privileges on.to 'root'@'%' indentified by 'root' with grant option;
 FLUSH PRIVILEGES;
 
 
-
-docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' container_name_or_id
 
 mysql> show variables like 'slow%';
 +---------------------+--------------------------------------+
@@ -56,3 +53,7 @@ mysql> show variables like 'slow%';
 3 rows in set (0.00 sec)
 
 mysql> 
+```
+
+
+
