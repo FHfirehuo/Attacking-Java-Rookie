@@ -19,5 +19,8 @@
   "bugs": {
     "url": "https://github.com/FHfirehuo/Attacking-Java-Rookie/issues"
   },
-  "homepage": "https://github.com/FHfirehuo/Attacking-Java-Rookie#readme"
+  "homepage": "https://github.com/FHfirehuo/Attacking-Java-Rookie#readme",
+  "dependencies": {
+    "code": "^5.2.4"
+  }
 }
