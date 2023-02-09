@@ -168,6 +168,30 @@ echo "上传完成"
 ```
 
 
+
+在使用 `gitbook-cli` 时，可能会遇到如下问题：
+
+```bash
+$ gitbook --version
+CLI version: 2.3.2
+Installing GitBook 3.2.3
+/Users/alphahinex/.nvm/versions/node/v12.22.12/lib/node_modules/gitbook-cli/node_modules/npm/node_modules/graceful-fs/polyfills.js:287
+      if (cb) cb.apply(this, arguments)
+                 ^
+
+TypeError: cb.apply is not a function
+    at /Users/alphahinex/.nvm/versions/node/v12.22.12/lib/node_modules/gitbook-cli/node_modules/npm/node_modules/graceful-fs/polyfills.js:287:18
+    at FSReqCallback.oncomplete (fs.js:169:5)
+```
+
+
+
+降低 gitbook-cli 版本解决此问题
+
+```bash
+npm install -g gitbook-cli@2.2.0
+```
+
 ## gitboot配置
 
 介绍一下gitbook中book.json的一些实用配置和插件
@@ -274,13 +298,13 @@ Gitbook默认自带有5个插件：
 ```
 
  code 代码添加行号&复制按钮（可选）
- 
+
  ```json
 
 {
     "plugins" : [ "code" ]
 }
-```
+ ```
 
 如果想去掉复制按钮，在book.json的插件配置块更新：
 
@@ -297,13 +321,13 @@ Gitbook默认自带有5个插件：
 ```
 
  copy-code-button 代码块复制按钮
- 
+
  ```json
 
 {
     "plugins": ["copy-code-button"]
 }
-```
+ ```
 
 
 将logo插入到导航栏上方中
